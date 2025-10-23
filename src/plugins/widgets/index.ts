@@ -25,6 +25,7 @@ import topSites from "./topSites";
 import weather from "./weather";
 import workHours from "./workHours";
 import timeTracker from "./timeTracker";
+import trello from "./trello";
 
 export const widgetConfigs = [
   // nba,
@@ -50,6 +51,7 @@ export const widgetConfigs = [
   weather,
   workHours,
   timeTracker,
+  trello,
 ];
 
 if (BUILD_TARGET === "web") {
