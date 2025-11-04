@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trello + Tabliss Successfully Authenticated!</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Successfully Authenticated!</h1>
+    <h2>You can close this tab</h2>
+  </div>
+  <script>
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token = params.get('token');
+    console.log(token)
+    // send token to endpoint
+    if (token) {
+      fetch("https://writetrellotoken-rrswz5h5iq-de.a.run.app", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({ token })
+      }).then(res => {
+        if (!res.ok) {
+          throw new Error("Failed")
+        }
+        return res.json()
+      }).then(json => {
+        console.log(json.sessionToken);
+      });
+    }
+  </script>
+</body>
+</html>
