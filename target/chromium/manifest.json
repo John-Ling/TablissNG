@@ -3,7 +3,6 @@
   "name": "TablissNG",
   "version": "1.5.1",
   "description": "A beautiful, customizable New Tab page with backgrounds and widgets. This is a maintained fork with ongoing updates in the future.",
-  "resources": ["callback.html"],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
