@@ -4,9 +4,7 @@ import Button from "../../../views/shared/Button";
 import { FormattedMessage } from "react-intl";
 
 const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
-  const CALLBACK_URL = "https://trellocallback-rrswz5h5iq-de.a.run.app";
-  console.log(CALLBACK_URL);
-  const AUTH_URL = "https://trello.com/1/authorize" +
+  const AUTH_URL_BASE = "https://trello.com/1/authorize" +
       "?expiration=1day" +
       "&callback_method=fragment" + 
       "&scope=read" + 
@@ -15,16 +13,25 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
   
   const onAuthenticateClick = async () => {
     const redirectUrl = browser.identity.getRedirectURL();
-    console.log(redirectUrl);
-    const authUrl = `${AUTH_URL}&return_url=${encodeURIComponent(redirectUrl)}`;
-    console.log(authUrl);
+    const AUTH_URL = `${AUTH_URL_BASE}&return_url=${encodeURIComponent(redirectUrl)}`;
     const redirectResponse = await browser.identity.launchWebAuthFlow({
-      url: authUrl,
+      url: AUTH_URL,
       interactive: true
     });
+
+    // receive token granted by Trello    
     const tokenMatch = redirectResponse.match(/token=([^&]+)/);
-    const token = tokenMatch ? tokenMatch[1] : null;
+    const token = tokenMatch ? tokenMatch[1] : null;    
     console.log(token);
+
+    const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", { method: "POST", body: JSON.stringify({ token: token })} );
+    if (callbackResult.ok) {
+      const json = await callbackResult.json();  
+      const session = json.session;
+      localStorage.setItem("sessionToken", session);
+    } else {
+      // handle error
+    }
   }
 
   return (
