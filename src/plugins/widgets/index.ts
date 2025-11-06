@@ -57,7 +57,7 @@ export const widgetConfigs = [
 if (BUILD_TARGET === "web") {
   widgetConfigs.push(js);
 }
-if (BUILD_TARGET != "web") {
+if (BUILD_TARGET != "web" && BUILD_TARGET != "safari") {
   widgetConfigs.push(topSites);
   widgetConfigs.push(bookmarks);
 }

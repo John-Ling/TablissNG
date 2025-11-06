@@ -15,7 +15,7 @@ export type Cache<Shape = unknown> = {
 export type Data<Shape = unknown> = {
   /**
    * A permanent (and synced) data store for storing small items and settings for the plugin.
-   * Note, the total Tabliss can store here is 100KB across all plugins.
+   * Note, the total Tabliss can store here is 100KB across all plugins, and each plugin can store up to 8KB of data.
    */
   data?: Shape;
   /**

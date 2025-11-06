@@ -8,11 +8,49 @@ I also attempt to follow the [Conventional Commits](https://www.conventionalcomm
 
 ## [Unreleased]
 
-## Changed
+### Added
 
-- feat: attempt at making custom positioning relative.
+- feat(Persist): improve errors and remove on non-web builds. [98195e8](https://github.com/BookCatKid/TablissNG/commit/98195e8)
 
-- feat: prevent resiszing textboxes in settings into unclickable areas. [#48](https://github.com/BookCatKid/TablissNG/pull/48)
+- feat(storage): add SAVE_BATCH_TIMEOUT to prevent storage errors. [b587897](https://github.com/BookCatKid/TablissNG/commit/b587897)
+
+- feat(LiteratureClock): enhance quote fetching with SFW filter and a new endpoint for more quotes. [224b153](https://github.com/BookCatKid/TablissNG/commit/224b153)
+
+- feat(bookmarks): add toggle to remember folder expansions. [f319b0a](https://github.com/BookCatKid/TablissNG/commit/f319b0a)
+
+- feat: add italics and underline options to widget font settings. [40d615d](https://github.com/BookCatKid/TablissNG/commit/40d615d)
+
+### Changed
+
+- feat: change Unsplash "Tags" input to "Search Term". [8efe064](https://github.com/BookCatKid/TablissNG/commit/8efe064)
+
+- feat: attempt at making custom positioning relative. [a28115b](https://github.com/BookCatKid/TablissNG/commit/a28115b)
+
+- feat: change resize mode of textareas changed to vertical to avoid resizing them into unclickable areas. [8b72e14](https://github.com/BookCatKid/TablissNG/commit/8b72e14)
+
+- chore: update dependencies and minor housekeeping. [0446686](https://github.com/BookCatKid/TablissNG/commit/0446686), [07abb38](https://github.com/BookCatKid/TablissNG/commit/07abb38)
+
+- chore: Change timezone label "Europe/Kiev" to "Europe/Kyiv". [46c9b61](https://github.com/BookCatKid/TablissNG/commit/46c9b61)
+
+### Fixed
+
+- fix(Import): set display.scale to true by default. [116df62](https://github.com/BookCatKid/TablissNG/commit/116df62a21c3eb83d8756c2d657ce01fa0a680b3)
+
+- fix(Jokes): set not saving contents correctly [32031e5](https://github.com/BookCatKid/TablissNG/commit/32031e5)
+
+- fix(QuickLinks): text underline not appearing. [b2f8883](https://github.com/BookCatKid/TablissNG/commit/b2f8883)
+
+### Translations
+
+- Update translations (several cs.json updates, translated auto-hide settings menu, engines). [e7e1a40](https://github.com/BookCatKid/TablissNG/commit/e7e1a40), [6107f9a](https://github.com/BookCatKid/TablissNG/commit/6107f9a), [576a15b](https://github.com/BookCatKid/TablissNG/commit/576a15b)
+
+- add: Albanian translation. [98084fb](https://github.com/BookCatKid/TablissNG/commit/98084fb)
+
+### Chore / Cleanup
+
+- remove console.log and minor cleanup. [a6006ad](https://github.com/BookCatKid/TablissNG/commit/a6006ad)
+- chore: add npm-check scripts and remove unused deps. [07abb38](https://github.com/BookCatKid/TablissNG/commit/07abb38)
+
 
 ## [1.5.1] - 8/4/2025 | Minor Feature and Bugfix Update
 
