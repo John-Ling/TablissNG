@@ -5,11 +5,11 @@ import { FormattedMessage } from "react-intl";
 
 const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
   const AUTH_URL_BASE = "https://trello.com/1/authorize" +
-      "?expiration=1day" +
-      "&callback_method=fragment" + 
-      "&scope=read" + 
-      "&response_type=token" + 
-      `&key=${TRELLO_API_KEY}`
+    "?expiration=1day" +
+    "&callback_method=fragment" + 
+    "&scope=read" + 
+    "&response_type=token" + 
+    `&key=${TRELLO_API_KEY}`
   
   const onAuthenticateClick = async () => {
     const redirectUrl = browser.identity.getRedirectURL();
@@ -21,16 +21,22 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
 
     // receive token granted by Trello    
     const tokenMatch = redirectResponse.match(/token=([^&]+)/);
-    const token = tokenMatch ? tokenMatch[1] : null;    
+    const token = tokenMatch ? tokenMatch[1] : null;
     console.log(token);
 
-    const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", { method: "POST", body: JSON.stringify({ token: token })} );
+    const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", { 
+                                      method: "POST", 
+                                      headers: { "Content-Type": "application/json"}, 
+                                      body: JSON.stringify({ token: token })} 
+                                  );
+
     if (callbackResult.ok) {
-      const json = await callbackResult.json();  
-      const session = json.session;
-      localStorage.setItem("sessionToken", session);
+      const json = await callbackResult.json(); 
+      const token = json.token;
+      browser.storage.local.set({ sessionToken: token });
     } else {
       // handle error
+      console.log("ERROR");
     }
   }
 
