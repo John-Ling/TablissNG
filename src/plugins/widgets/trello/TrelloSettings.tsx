@@ -5,19 +5,28 @@ import { useCachedEffect } from "../../../hooks";
 import { FormattedMessage } from "react-intl";
 import { checkAuth } from "./utils";
 import { Board, List } from "./types";
-import Select from "react-dropdown-select";
+import ListCheckbox from "./ui/ListCheckbox";
 
-
-const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
+const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
+  const MAX_LISTENERS = 4; // maximum lists a user can select
   const [authenticated, setAuthenticated] = useState<boolean>(true);
-  const [availableBoards, setAvailableBoards] = useState<{ boards: Board[], loading: boolean }>({boards: [], loading: true});
-  const [availableLists, setAvailableLists] = useState<{ lists: List[], loading: boolean }>({ lists: [], loading: true });
+  const [selectedListCount, setSelectedListCount] = useState<number>(0);
+
+  const [availableBoards, setAvailableBoards] = useState<{
+    boards: Board[];
+    loading: boolean;
+  }>({ boards: [], loading: true });
+
+  const [availableLists, setAvailableLists] = useState<{
+    lists: List[];
+    loading: boolean;
+  }>({ lists: [], loading: true });
 
   // const AUTH_URL_BASE = "https://trello.com/1/authorize" +
   //   "?expiration=1day" +
-  //   "&callback_method=fragment" + 
-  //   "&scope=read" + 
-  //   "&response_type=token" + 
+  //   "&callback_method=fragment" +
+  //   "&scope=read" +
+  //   "&response_type=token" +
   //   `&key=${TRELLO_API_KEY}`
 
   // useEffect(() => {
@@ -27,7 +36,7 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
   //   }
   //   effect();
   // }, []);
-  
+
   // const onAuthenticateClick = async () => {
   //   const redirectUrl = browser.identity.getRedirectURL();
   //   const AUTH_URL = `${AUTH_URL_BASE}&return_url=${encodeURIComponent(redirectUrl)}`;
@@ -40,14 +49,14 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
   //   const tokenMatch = redirectResponse.match(/token=([^&]+)/);
   //   const token = tokenMatch ? tokenMatch[1] : null;
   //   // convert token into JWT and alter user data in Firestore
-  //   const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", { 
-  //                                     method: "POST", 
-  //                                     headers: { "Content-Type": "application/json"}, 
-  //                                     body: JSON.stringify({ token: token })} 
+  //   const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", {
+  //                                     method: "POST",
+  //                                     headers: { "Content-Type": "application/json"},
+  //                                     body: JSON.stringify({ token: token })}
   //                                 );
 
   //   if (callbackResult.ok) {
-  //     const json = await callbackResult.json(); 
+  //     const json = await callbackResult.json();
   //     const token = json.token;
   //     browser.storage.local.set({ trelloSessionToken: token });
   //     setAuthenticated(true);
@@ -63,100 +72,146 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData}) => {
   //   setAuthenticated(false);
   // }
 
+  const onListCheckboxSelect = (listID: string) => {
+    // limit to a maximum of 4 
+    const found = availableLists.lists.find((list: List) => list.id === listID);
+    if (!found) {
+      return;
+    }
+
+    if (found.watch) {
+      setSelectedListCount(count => count - 1);
+    } else {
+      if (selectedListCount + 1 > MAX_LISTENERS) {
+        return;
+      }
+      setSelectedListCount(count => count + 1); 
+    }
+    
+    setAvailableLists({
+      lists: availableLists.lists.map((list: List) => { 
+        return list.id === listID ? { ...list, watch: !list.watch } : list
+      }),
+      loading: false,
+    });
+  }
+
   useEffect(() => {
     // fetch available boards for use
     const effect = async () => {
       // simulate api call
       console.log("Fetching boards");
-      await new Promise(r => setTimeout(r, 2000));
-      setAvailableBoards( { boards: [ {id: "1", name: "board1", enabledLists: undefined} as Board, {id: "2", name: "board2", enabledLists: undefined} as Board, {id: "3", name: "board3", enabledLists: undefined} as Board ], loading: false });
-    }
+      await new Promise((r) => setTimeout(r, 2000));
+      setAvailableBoards({
+        boards: [
+          { id: "1", name: "board1", enabledLists: undefined } as Board,
+          { id: "2", name: "board2", enabledLists: undefined } as Board,
+          { id: "3", name: "board3", enabledLists: undefined } as Board,
+        ],
+        loading: false,
+      });
+    };
     effect();
   }, []);
 
   useEffect(() => {
     // when a board is selected pull the lists under it
-    // requirws JWT
+    // requires JWT
+    setAvailableLists({ ...availableLists, loading: true });
     const effect = async () => {
       console.log("Fetching lists");
-      await new Promise(r => setTimeout(r, 2000));
-      setAvailableLists({ lists: [ { id: "1", name: "list1", boardID: "1", items: [] } as List, { id: "2", name: "list2", boardID: "1", items: [] } as List, { id: "3", name: "list3", boardID: "3", items: [] } as List ], loading: false})
-    }
+      console.log(data.selectedID);
+      await new Promise((r) => setTimeout(r, 2000));
+      setAvailableLists({
+        lists: [
+          { id: "1", name: "list1", boardID: "1", items: [], watch: false } as List,
+          { id: "2", name: "list2", boardID: "1", items: [], watch: false } as List,
+          { id: "3", name: "list3", boardID: "3", items: [], watch: false } as List,
+          { id: "4", name: "list4", boardID: "1", items: [], watch: false } as List,
+          { id: "5", name: "list5", boardID: "2", items: [], watch: false } as List,
+          { id: "6", name: "list6", boardID: "2", items: [], watch: false } as List,
+          { id: "7", name: "list7", boardID: "3", items: [], watch: false } as List,
+          { id: "8", name: "list8", boardID: "3", items: [], watch: false } as List,
+        ],
+        loading: false,
+      });
+    };
     effect();
-  }, [data.selectedID])
+  }, [data.selectedID]);
 
   if (authenticated) {
     return (
-        <>
+      <>
+        <label>
+          <FormattedMessage
+            id="plugins.trello.boardSelect"
+            defaultMessage="Select your board"
+            description="Select your board"
+          />
+          <div className="board-select-container">
+            {availableBoards.loading ? (
+              <p style={{marginLeft: "4px"}}>Loading...</p>
+              ) : 
+              (
+                <select
+                  onChange={(event) =>
+                    setData({ ...data, selectedID: event.target.value })
+                  }
+                >
+                  {availableBoards.boards.map((board: Board) => {
+                    return (
+                      <option key={board.id} value={board.id}>
+                        {board.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
+          </div>
+        </label>
+        <div className="offset">
           <label>
-            <FormattedMessage
-              id="plugins.trello.boardSelect"
-              defaultMessage="Select your board"
-              description="Select your board"
-            />
-
-            {availableBoards.loading ? <p>Loading</p> :
-            <select 
-              onChange={(event) => setData({...data, selectedID: event.target.value})}
-            >
-              {availableBoards.boards.map((board: Board) => {
-                return <option key={board.id} value={board.id}>{board.name}</option>
-              })}
-            </select>
-            }
-          </label>
-          <div className="offset">
             <FormattedMessage
               id="plugins.trello.listSelect"
               defaultMessage="Select up to 4 lists to watch"
               description="Select up to 4 lists to watch"
             />
             <div className="list-select-container">
-              <label>
-                <input 
-                  type="checkbox"
-                />{" "}
-                Test
-              </label>
-              <label>
-                <input 
-                  type="checkbox"
-                />{" "}
-                Test
-              </label>
-              <label>
-                <input 
-                  type="checkbox"
-                />{" "}
-                Test
-              </label>
-              <label>
-                <input 
-                  type="checkbox"
-                />{" "}
-                Test
-              </label>
+              {availableLists.loading ? (
+                <p>Loading...</p>
+              ) : (
+                availableLists.lists.map((list: List, index) => {
+                  return (
+                    <ListCheckbox   
+                      key={list.id}
+                      checked={list.watch} 
+                      index={index} 
+                      listID={list.id} 
+                      label={list.name} 
+                      onChange={onListCheckboxSelect} 
+                    />
+                  );
+                })
+              )}
             </div>
-            
-          </div>
-          
-          {/* <Button primary onClick={onSignout}>Logout</Button> */}
-        </>
-    )
+          </label>
+        </div>
+      </>
+    );
   }
 
   return (
-      <>
-        <label>
-          <FormattedMessage
-            id="plugins.trello.authenticate"
-            defaultMessage="Sign in With Trello"
-            description="Sign in with Trello"
-          />
-        </label>
-        {/* <Button primary onClick={onAuthenticateClick}>Authenticate</Button> */}
-      </>
-  )
-}
+    <>
+      <label>
+        <FormattedMessage
+          id="plugins.trello.authenticate"
+          defaultMessage="Sign in With Trello"
+          description="Sign in with Trello"
+        />
+      </label>
+      {/* <Button primary onClick={onAuthenticateClick}>Authenticate</Button> */}
+    </>
+  );
+};
 
 export default TrelloSettings;

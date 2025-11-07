@@ -10,6 +10,7 @@ export type List = {
   id: string;
   name: string;
   boardID: string;
+  watch: boolean;
   items?: string[];
 }
 
@@ -23,4 +24,5 @@ export type Props = API<Data>;
 export const defaultData: Data = {
   selectedBoard: null, 
   selectedID: null,
+
 };
