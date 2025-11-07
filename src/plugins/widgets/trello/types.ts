@@ -1,18 +1,26 @@
 import { API } from "../../types";
 
-export type TrelloList = {
-    // can either use list id or name for identification
-    listID?: string;
-    name: string;
-    boardID: string;
+export type Board = {
+  id: string;
+  name: string;
+  enabledLists?: List[];
+}
+
+export type List = {
+  id: string;
+  name: string;
+  boardID: string;
+  items?: string[];
 }
 
 export type Data = {
-    lists: TrelloList[];
+  selectedBoard: Board | null;  // user's current board selection
+  selectedID: string | null;
 };
 
 export type Props = API<Data>;
 
 export const defaultData: Data = {
-  lists: []
+  selectedBoard: null, 
+  selectedID: null,
 };
