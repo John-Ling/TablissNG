@@ -1,5 +1,11 @@
 import { API } from "../../types";
 
+// locally saved preferences
+// stored in local storage with boardID as the key
+export type BoardPreferences = {
+  selectedLists: List[];
+}
+
 export type Board = {
   id: string;
   name: string;

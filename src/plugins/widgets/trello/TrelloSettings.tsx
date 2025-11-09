@@ -1,11 +1,12 @@
 import React, { FC, useEffect, useState } from "react";
-import { defaultData, Props } from "./types";
+import { BoardPreferences, defaultData, Props } from "./types";
 import Button from "../../../views/shared/Button";
-import { useCachedEffect } from "../../../hooks";
 import { FormattedMessage } from "react-intl";
-import { checkAuth } from "./utils";
+import { useCachedEffect } from "../../../hooks";
+import { checkAuth, getPreferences , setPreferences } from "./utils";
 import { Board, List } from "./types";
 import ListCheckbox from "./ui/ListCheckbox";
+import { getBoards, getLists } from "./api";
 
 const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
   const MAX_LISTENERS = 4; // maximum lists a user can select
@@ -22,55 +23,55 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     loading: boolean;
   }>({ lists: [], loading: true });
 
-  // const AUTH_URL_BASE = "https://trello.com/1/authorize" +
-  //   "?expiration=1day" +
-  //   "&callback_method=fragment" +
-  //   "&scope=read" +
-  //   "&response_type=token" +
-  //   `&key=${TRELLO_API_KEY}`
+  const AUTH_URL_BASE = "https://trello.com/1/authorize" +
+    "?expiration=1day" +
+    "&callback_method=fragment" +
+    "&scope=read" +
+    "&response_type=token" +
+    `&key=${TRELLO_API_KEY}`
 
-  // useEffect(() => {
-  //   const effect = async () => {
-  //     console.log("Checking auth status");
-  //     setAuthenticated(await checkAuth());
-  //   }
-  //   effect();
-  // }, []);
+  useEffect(() => {
+    const effect = async () => {
+      console.log("Checking auth status");
+      setAuthenticated(await checkAuth());
+    }
+    effect();
+  }, []);
 
-  // const onAuthenticateClick = async () => {
-  //   const redirectUrl = browser.identity.getRedirectURL();
-  //   const AUTH_URL = `${AUTH_URL_BASE}&return_url=${encodeURIComponent(redirectUrl)}`;
-  //   const redirectResponse = await browser.identity.launchWebAuthFlow({
-  //     url: AUTH_URL,
-  //     interactive: true
-  //   });
+  const onAuthenticateClick = async () => {
+    const redirectUrl = browser.identity.getRedirectURL();
+    const AUTH_URL = `${AUTH_URL_BASE}&return_url=${encodeURIComponent(redirectUrl)}`;
+    const redirectResponse = await browser.identity.launchWebAuthFlow({
+      url: AUTH_URL,
+      interactive: true
+    });
 
-  //   // receive token granted by Trello
-  //   const tokenMatch = redirectResponse.match(/token=([^&]+)/);
-  //   const token = tokenMatch ? tokenMatch[1] : null;
-  //   // convert token into JWT and alter user data in Firestore
-  //   const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", {
-  //                                     method: "POST",
-  //                                     headers: { "Content-Type": "application/json"},
-  //                                     body: JSON.stringify({ token: token })}
-  //                                 );
+    // receive token granted by Trello
+    const tokenMatch = redirectResponse.match(/token=([^&]+)/);
+    const token = tokenMatch ? tokenMatch[1] : null;
+    // convert token into JWT and alter user data in Firestore
+    const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json"},
+                                      body: JSON.stringify({ token: token })}
+                                  );
 
-  //   if (callbackResult.ok) {
-  //     const json = await callbackResult.json();
-  //     const token = json.token;
-  //     browser.storage.local.set({ trelloSessionToken: token });
-  //     setAuthenticated(true);
-  //   } else {
-  //     // handle error
-  //     console.log("ERROR");
-  //   }
-  // }
+    if (callbackResult.ok) {
+      const json = await callbackResult.json();
+      const token = json.token;
+      await browser.storage.local.set({ trelloSessionToken: token });
+      setAuthenticated(true);
+    } else {
+      // handle error
+      console.log("ERROR");
+    }
+  }
 
-  // const onSignout = async () => {
-  //   await browser.storage.local.remove("trelloSessionToken");
-  //   console.log("Logged out");
-  //   setAuthenticated(false);
-  // }
+  const onSignout = async () => {
+    await browser.storage.local.remove("trelloSessionToken");
+    console.log("Logged out");
+    setAuthenticated(false);
+  }
 
   const onListCheckboxSelect = (listID: string) => {
     // limit to a maximum of 4 
@@ -80,20 +81,27 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     }
 
     if (found.watch) {
+      // set to unchecked
       setSelectedListCount(count => count - 1);
     } else {
+      // set to checked
       if (selectedListCount + 1 > MAX_LISTENERS) {
         return;
       }
       setSelectedListCount(count => count + 1); 
     }
     
+    // update UI state
     setAvailableLists({
       lists: availableLists.lists.map((list: List) => { 
         return list.id === listID ? { ...list, watch: !list.watch } : list
       }),
       loading: false,
     });
+
+    // save preferences
+    const newPreferences: BoardPreferences = {selectedLists: availableLists.lists.filter((list: List ) => { return list.watch } )}
+    setPreferences(data.selectedID, newPreferences);
   }
 
   useEffect(() => {
@@ -101,40 +109,44 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     const effect = async () => {
       // simulate api call
       console.log("Fetching boards");
-      await new Promise((r) => setTimeout(r, 2000));
+
+      const boards = await getBoards();
       setAvailableBoards({
-        boards: [
-          { id: "1", name: "board1", enabledLists: undefined } as Board,
-          { id: "2", name: "board2", enabledLists: undefined } as Board,
-          { id: "3", name: "board3", enabledLists: undefined } as Board,
-        ],
-        loading: false,
-      });
+        boards: boards,
+        loading: false
+      })
     };
     effect();
   }, []);
 
   useEffect(() => {
     // when a board is selected pull the lists under it
-    // requires JWT
     setAvailableLists({ ...availableLists, loading: true });
     const effect = async () => {
-      console.log("Fetching lists");
-      console.log(data.selectedID);
-      await new Promise((r) => setTimeout(r, 2000));
+      let lists = await getLists("placeholder");
+
+      console.log("Loading preferences");
+      // load preferences if they exist
+      if (!!data.selectedID) {
+        const preferences = await getPreferences(data.selectedID);
+
+        if (preferences) {
+          // apply preferences
+          lists.forEach(list => {
+            const match = preferences.selectedLists.find(item => item.id === list.id);
+            if (match) {
+              list.watch = match.watch;
+            }
+          });                  
+        }
+      }
+
       setAvailableLists({
-        lists: [
-          { id: "1", name: "list1", boardID: "1", items: [], watch: false } as List,
-          { id: "2", name: "list2", boardID: "1", items: [], watch: false } as List,
-          { id: "3", name: "list3", boardID: "3", items: [], watch: false } as List,
-          { id: "4", name: "list4", boardID: "1", items: [], watch: false } as List,
-          { id: "5", name: "list5", boardID: "2", items: [], watch: false } as List,
-          { id: "6", name: "list6", boardID: "2", items: [], watch: false } as List,
-          { id: "7", name: "list7", boardID: "3", items: [], watch: false } as List,
-          { id: "8", name: "list8", boardID: "3", items: [], watch: false } as List,
-        ],
+        lists: lists,
         loading: false,
       });
+
+      
     };
     effect();
   }, [data.selectedID]);
@@ -196,6 +208,16 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
             </div>
           </label>
         </div>
+        <div className="offset">
+          <label>
+            <FormattedMessage
+              id="plugins.trello.logout"
+              defaultMessage="Sign Out"
+              description="Sign Out"
+            />
+          </label>
+          <Button primary onClick={onSignout}>Sign Out</Button>
+        </div>
       </>
     );
   }
@@ -209,7 +231,7 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
           description="Sign in with Trello"
         />
       </label>
-      {/* <Button primary onClick={onAuthenticateClick}>Authenticate</Button> */}
+      <Button primary onClick={onAuthenticateClick}>Authenticate</Button>
     </>
   );
 };
