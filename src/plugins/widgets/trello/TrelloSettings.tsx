@@ -2,7 +2,6 @@ import React, { FC, useEffect, useState } from "react";
 import { BoardPreferences, defaultData, Props } from "./types";
 import Button from "../../../views/shared/Button";
 import { FormattedMessage } from "react-intl";
-import { useCachedEffect } from "../../../hooks";
 import { checkAuth, getPreferences , setPreferences } from "./utils";
 import { Board, List } from "./types";
 import ListCheckbox from "./ui/ListCheckbox";
@@ -10,7 +9,7 @@ import { getBoards, getLists } from "./api";
 
 const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
   const MAX_LISTENERS = 4; // maximum lists a user can select
-  const [authenticated, setAuthenticated] = useState<boolean>(true);
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
   const [selectedListCount, setSelectedListCount] = useState<number>(0);
 
   const [availableBoards, setAvailableBoards] = useState<{
@@ -53,8 +52,8 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", {
                                       method: "POST",
                                       headers: { "Content-Type": "application/json"},
-                                      body: JSON.stringify({ token: token })}
-                                  );
+                                      body: JSON.stringify({ token: token })
+                                    });
 
     if (callbackResult.ok) {
       const json = await callbackResult.json();
@@ -69,7 +68,6 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
 
   const onSignout = async () => {
     await browser.storage.local.remove("trelloSessionToken");
-    console.log("Logged out");
     setAuthenticated(false);
   }
 
@@ -100,7 +98,7 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     });
 
     // save preferences
-    const newPreferences: BoardPreferences = {selectedLists: availableLists.lists.filter((list: List ) => { return list.watch } )}
+    const newPreferences: BoardPreferences = {selectedLists: availableLists.lists.filter((list: List ) => { return list.watch } )};
     setPreferences(data.selectedID, newPreferences);
   }
 
@@ -111,13 +109,21 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
       console.log("Fetching boards");
 
       const boards = await getBoards();
+
+      console.log("Complete");
       setAvailableBoards({
         boards: boards,
         loading: false
-      })
+      }); 
+
+      setData({...data, selectedID: boards[0].id});
     };
-    effect();
-  }, []);
+
+    if (authenticated) {
+      effect();
+    }
+    
+  }, [authenticated]);
 
   useEffect(() => {
     // when a board is selected pull the lists under it
@@ -144,80 +150,25 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
       setAvailableLists({
         lists: lists,
         loading: false,
-      });
-
-      
+      }); 
     };
-    effect();
-  }, [data.selectedID]);
 
-  if (authenticated) {
+    if (authenticated) {
+      effect();
+    }
+  }, [data.selectedID, authenticated]);
+
+  if (!authenticated) {
     return (
       <>
         <label>
           <FormattedMessage
-            id="plugins.trello.boardSelect"
-            defaultMessage="Select your board"
-            description="Select your board"
+            id="plugins.trello.authenticate"
+            defaultMessage="Sign in With Trello"
+            description="Sign in with Trello"
           />
-          <div className="board-select-container">
-            {availableBoards.loading ? (
-              <p style={{marginLeft: "4px"}}>Loading...</p>
-              ) : 
-              (
-                <select
-                  onChange={(event) =>
-                    setData({ ...data, selectedID: event.target.value })
-                  }
-                >
-                  {availableBoards.boards.map((board: Board) => {
-                    return (
-                      <option key={board.id} value={board.id}>
-                        {board.name}
-                      </option>
-                    );
-                  })}
-                </select>
-              )}
-          </div>
         </label>
-        <div className="offset">
-          <label>
-            <FormattedMessage
-              id="plugins.trello.listSelect"
-              defaultMessage="Select up to 4 lists to watch"
-              description="Select up to 4 lists to watch"
-            />
-            <div className="list-select-container">
-              {availableLists.loading ? (
-                <p>Loading...</p>
-              ) : (
-                availableLists.lists.map((list: List, index) => {
-                  return (
-                    <ListCheckbox   
-                      key={list.id}
-                      checked={list.watch} 
-                      index={index} 
-                      listID={list.id} 
-                      label={list.name} 
-                      onChange={onListCheckboxSelect} 
-                    />
-                  );
-                })
-              )}
-            </div>
-          </label>
-        </div>
-        <div className="offset">
-          <label>
-            <FormattedMessage
-              id="plugins.trello.logout"
-              defaultMessage="Sign Out"
-              description="Sign Out"
-            />
-          </label>
-          <Button primary onClick={onSignout}>Sign Out</Button>
-        </div>
+        <Button primary onClick={onAuthenticateClick}>Authenticate</Button>
       </>
     );
   }
@@ -226,14 +177,70 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     <>
       <label>
         <FormattedMessage
-          id="plugins.trello.authenticate"
-          defaultMessage="Sign in With Trello"
-          description="Sign in with Trello"
+          id="plugins.trello.boardSelect"
+          defaultMessage="Select your board"
+          description="Select your board"
         />
+        <div className="board-select-container">
+          {availableBoards.loading && availableBoards.boards.length === 0 ? (
+            <p style={{marginLeft: "4px"}}>Loading...</p>
+            ) : 
+            (
+              <select
+                onChange={(event) =>
+                  setData({ ...data, selectedID: event.target.value })
+                }
+              >
+                {availableBoards.boards.map((board: Board) => {
+                  return (
+                    <option key={board.id} value={board.id}>
+                      {board.name}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+        </div>
       </label>
-      <Button primary onClick={onAuthenticateClick}>Authenticate</Button>
+      <div className="offset">
+        <label>
+          <FormattedMessage
+            id="plugins.trello.listSelect"
+            defaultMessage="Select up to 4 lists to watch"
+            description="Select up to 4 lists to watch"
+          />
+          <div className="list-select-container">
+            {availableLists.loading ? (
+              <p>Loading...</p>
+            ) : (
+              availableLists.lists.map((list: List, index) => {
+                return (
+                  <ListCheckbox   
+                    key={list.id}
+                    checked={list.watch} 
+                    index={index} 
+                    listID={list.id} 
+                    label={list.name} 
+                    onChange={onListCheckboxSelect} 
+                  />
+                );
+              })
+            )}
+          </div>
+        </label>
+      </div>
+      <div className="offset">
+        <label>
+          <FormattedMessage
+            id="plugins.trello.logout"
+            defaultMessage="Sign Out"
+            description="Sign Out"
+          />
+        </label>
+        <Button primary onClick={onSignout}>Sign Out</Button>
+      </div>
     </>
-  );
+  );  
 };
 
 export default TrelloSettings;

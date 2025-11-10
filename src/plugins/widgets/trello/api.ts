@@ -1,13 +1,31 @@
 import { Board, List } from "./types";
+import { getToken } from "./utils";
 
 export const getBoards = async () => {
-    await new Promise((r) => setTimeout(r, 2000));
-    return [
-        {id: "1", name: "board1", enabledLists: undefined} as Board, 
-        {id: "2", name: "board2", enabledLists: undefined} as Board, 
-        {id: "3", name: "board3", enabledLists: undefined} as Board,
-        {id: "4", name: "board4", enabledLists: undefined} as Board 
-    ]
+    const token = await getToken();
+    if (!token) {
+        return null;
+    }
+
+    const fetchBoardRes = await fetch("https://getboards-rrswz5h5iq-de.a.run.app", { 
+                                    method: "POST", 
+                                    headers: { "Authorization": `Bearer ${token}` },
+                                    });
+
+    if (!fetchBoardRes.ok) {
+        return null;
+    }
+
+    const boards = (await fetchBoardRes.json()).boards;
+    return boards;
+
+    // await new Promise((r) => setTimeout(r, 2000));
+    // return [
+    //     {id: "1", name: "board1", enabledLists: undefined} as Board, 
+    //     {id: "2", name: "board2", enabledLists: undefined} as Board, 
+    //     {id: "3", name: "board3", enabledLists: undefined} as Board,
+    //     {id: "4", name: "board4", enabledLists: undefined} as Board 
+    // ]
 }
 
 export const getLists = async (boardID: string) => {

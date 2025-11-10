@@ -5,17 +5,13 @@ import { BoardPreferences } from "./types";
 // returns true if user is properly authenticated
 export const checkAuth = async () => {
     try {
-        const obj = await browser.storage.local.get("trelloSessionToken");
-        const token: string | null = typeof obj["trelloSessionToken"] === "string" ? obj["trelloSessionToken"] : null;
-        console.log(token);
-
+        const token = await getToken();
         if (!token) {
             return false;
         }
         
         const payload = JSON.parse(atob(token.split('.')[1]));
         const authenticated = payload.exp * 1000 > Date.now();
-        console.log(authenticated);
         return authenticated;
     } catch (error) {
         console.error(error);
@@ -38,7 +34,6 @@ export const setPreferences = async (boardID: string | null, preferences: BoardP
     
 }
 
-
 export const getPreferences = async (boardID: string | null) => {
     if (!boardID) {
         throw new Error("Received NULL boardID");
@@ -52,4 +47,20 @@ export const getPreferences = async (boardID: string | null) => {
         console.error(error);
         throw error;
     }
+}
+
+export const getToken = async () => {
+    const obj = await browser.storage.local.get("trelloSessionToken");
+    const token: string | null = typeof obj["trelloSessionToken"] === "string" ? obj["trelloSessionToken"] : null;
+
+    if (!token) {
+        return null;
+    }
+    return token
+}
+
+// returns the id of the authenticated user based on the token provided
+export const getAuthenticatedUser = async (token: string) => {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id;
 }

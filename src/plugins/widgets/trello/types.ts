@@ -9,7 +9,6 @@ export type BoardPreferences = {
 export type Board = {
   id: string;
   name: string;
-  enabledLists?: List[];
 }
 
 export type List = {
