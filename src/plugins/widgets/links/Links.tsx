@@ -1,13 +1,24 @@
 import React, { FC, useMemo, useEffect } from "react";
 
+import { defineMessages, useIntl } from "react-intl";
 import { useKeyPress, useToggle } from "../../../hooks";
 import { Icon } from "@iconify/react";
 import Display from "./Display";
 import { Props, defaultData, defaultCache } from "./types";
 import "./Links.sass";
 
+const messages = defineMessages({
+  showQuickLinks: {
+    id: "plugins.links.showQuickLinks",
+    description: "Tooltip to show quick links",
+    defaultMessage: "Show quick links",
+  },
+});
+
 const Links: FC<Props> = ({ data = defaultData, setData, cache = defaultCache }) => {
   const [visible, toggleVisible] = useToggle();
+
+  const intl = useIntl();
 
   // Ensure all links have unique IDs to prevent React key errors
   useEffect(() => {
@@ -95,7 +106,7 @@ const Links: FC<Props> = ({ data = defaultData, setData, cache = defaultCache })
           />
         ))
       ) : (
-        <a onClick={toggleVisible} title="Show quick links">
+        <a onClick={toggleVisible} title={intl.formatMessage(messages.showQuickLinks)}>
           <Icon icon="fe:insert-link" />
         </a>
       )}
