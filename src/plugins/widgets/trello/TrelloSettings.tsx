@@ -2,7 +2,8 @@ import React, { FC, useEffect, useState } from "react";
 import { BoardPreferences, defaultData, Props } from "./types";
 import Button from "../../../views/shared/Button";
 import { FormattedMessage } from "react-intl";
-import { checkAuth, getPreferences , setPreferences } from "./utils";
+import { runAuthFlow, checkAuth } from "./utils/auth";
+import { getPreferences, setPreferences } from "./utils/preferences";
 import { Board, List } from "./types";
 import ListCheckbox from "./ui/ListCheckbox";
 import Spinner from "./ui/Spinner";
@@ -23,13 +24,6 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     loading: boolean;
   }>({ lists: [], loading: true });
 
-  const AUTH_URL_BASE = "https://trello.com/1/authorize" +
-    "?expiration=1day" +
-    "&callback_method=fragment" +
-    "&scope=read" +
-    "&response_type=token" +
-    `&key=${TRELLO_API_KEY}`
-
   useEffect(() => {
     const effect = async () => {
       console.log("Checking auth status");
@@ -39,32 +33,8 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
   }, []);
 
   const onAuthenticateClick = async () => {
-    const redirectUrl = browser.identity.getRedirectURL();
-    const AUTH_URL = `${AUTH_URL_BASE}&return_url=${encodeURIComponent(redirectUrl)}`;
-    const redirectResponse = await browser.identity.launchWebAuthFlow({
-      url: AUTH_URL,
-      interactive: true
-    });
-
-    // receive token granted by Trello
-    const tokenMatch = redirectResponse.match(/token=([^&]+)/);
-    const token = tokenMatch ? tokenMatch[1] : null;
-    // convert token into JWT and alter user data in Firestore
-    const callbackResult = await fetch("https://trellocallback-rrswz5h5iq-de.a.run.app", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json"},
-                                      body: JSON.stringify({ token: token })
-                                    });
-
-    if (callbackResult.ok) {
-      const json = await callbackResult.json();
-      const token = json.token;
-      await browser.storage.local.set({ trelloSessionToken: token });
-      setAuthenticated(true);
-    } else {
-      // handle error
-      console.log("ERROR");
-    }
+    const success = await runAuthFlow();
+    setAuthenticated(success);
   }
 
   const onSignout = async () => {
@@ -101,6 +71,11 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
     // save preferences
     const newPreferences: BoardPreferences = {selectedLists: availableLists.lists.filter((list: List ) => { return list.watch } )};
     setPreferences(data.selectedID, newPreferences);
+
+    // create a new listener/webhook
+    // add fetch here
+
+    // add new listener to ui
   }
 
   useEffect(() => {

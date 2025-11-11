@@ -1,4 +1,3 @@
-import { Board, List } from "./types";
 import { getToken } from "./utils";
 
 export const getBoards = async () => {
