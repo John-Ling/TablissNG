@@ -5,6 +5,7 @@ import { FormattedMessage } from "react-intl";
 import { checkAuth, getPreferences , setPreferences } from "./utils";
 import { Board, List } from "./types";
 import ListCheckbox from "./ui/ListCheckbox";
+import Spinner from "./ui/Spinner";
 import { getBoards, getLists } from "./api";
 
 const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
@@ -105,46 +106,48 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
   useEffect(() => {
     // fetch available boards for use
     const effect = async () => {
-      // simulate api call
-      console.log("Fetching boards");
-
       const boards = await getBoards();
-
-      console.log("Complete");
-      setAvailableBoards({
-        boards: boards,
-        loading: false
-      }); 
-
-      setData({...data, selectedID: boards[0].id});
+      if (!!boards) {
+        setAvailableBoards({
+          boards: boards,
+          loading: false
+        });
+        
+        setData({...data, selectedID: boards[0].id});
+      }
     };
 
     if (authenticated) {
       effect();
     }
-    
   }, [authenticated]);
 
   useEffect(() => {
     // when a board is selected pull the lists under it
     setAvailableLists({ ...availableLists, loading: true });
     const effect = async () => {
-      let lists = await getLists("placeholder");
+      if (!data.selectedID) {
+        return;
+      }
 
-      console.log("Loading preferences");
+      console.log("Getting lists");
+      const lists = await getLists(data.selectedID);
+
+      if (!lists) {
+        return;
+      }
+
       // load preferences if they exist
-      if (!!data.selectedID) {
-        const preferences = await getPreferences(data.selectedID);
-
-        if (preferences) {
-          // apply preferences
-          lists.forEach(list => {
-            const match = preferences.selectedLists.find(item => item.id === list.id);
-            if (match) {
-              list.watch = match.watch;
-            }
-          });                  
-        }
+      console.log("Loading preferences");
+      const preferences = await getPreferences(data.selectedID);
+      if (preferences) {
+        // apply preferences
+        lists.forEach((list: List) => {
+          const match = preferences.selectedLists.find(item => item.id === list.id);
+          if (match) {
+            list.watch = match.watch;
+          }   
+        });                  
       }
 
       setAvailableLists({
@@ -183,7 +186,7 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
         />
         <div className="board-select-container">
           {availableBoards.loading && availableBoards.boards.length === 0 ? (
-            <p style={{marginLeft: "4px"}}>Loading...</p>
+            <div className="loading" style={{marginLeft: "4px"}}>Loading... <Spinner size={16} /></div>
             ) : 
             (
               <select
@@ -211,7 +214,7 @@ const TrelloSettings: FC<Props> = ({ data = defaultData, setData }) => {
           />
           <div className="list-select-container">
             {availableLists.loading ? (
-              <p>Loading...</p>
+              <div className="loading">Loading... <Spinner size={16} /></div>
             ) : (
               availableLists.lists.map((list: List, index) => {
                 return (
